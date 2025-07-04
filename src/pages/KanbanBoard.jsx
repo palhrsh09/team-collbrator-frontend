@@ -15,7 +15,6 @@ export default function KanbanBoard() {
   const { projectId } = useParams();
   const  dispatch = useDispatch();
   const { user, token } = useSelector((state) => state.auth);
-  const { tasks, users, loading, error } = useSelector((state) => state.tasks);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -23,16 +22,80 @@ export default function KanbanBoard() {
     status: 'todo',
     assignedTo: '',
   });
+   const [users, setUsers] = useState([]);
+ const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Assuming api_url is accessible, e.g., from an environment variable
+  const api_url = import.meta.env.VITE_API_URL; 
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${api_url}/api/v1/users/${user?.teamId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', 
+      });
+
+      if (!response.ok) {
+        // Handle HTTP errors (e.g., 401, 404, 500)
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch tasks');
+      }
+
+      const data = await response.json();
+      setUsers(data || []);
+    } catch (error) {
+     console.error("Error fetching tasks:", err);
+      setError(err.message);  
+    }
+  }
+
+
+  const fetchTasksDirectly = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${api_url}/api/v1/task`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // This is the key part for sending cookies/auth headers
+      });
+
+      if (!response.ok) {
+        // Handle HTTP errors (e.g., 401, 404, 500)
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch tasks');
+      }
+
+      const data = await response.json();
+      setTasks(data); // Assuming the API returns an array of tasks
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    console.log("token",token,"user:",user,"projectId:",projectId)
-    if (projectId && token) {
-      dispatch(fetchTasks({ token, projectId }));
-    }
-    if (user?.teamId && token) {
-      dispatch(fetchUsers({ token, teamId: user.teamId }));
-    }
-  }, [dispatch, projectId, user, token]);
+    fetchTasksDirectly();
+    fetchUsers();
+  }, []);
+  // useEffect(() => {
+  //   console.log("token",token,"user:",user,"projectId:",projectId)
+  //   if (projectId && token) {
+  //     dispatch(fetchTasks({ token, projectId }));
+  //   }
+  //   if (user?.teamId && token) {
+  //     dispatch(fetchUsers({ token, teamId: user.teamId }));
+  //   }
+  // }, [dispatch, projectId, user, token]);
 
   useEffect(() => {
     if (error) {
@@ -47,30 +110,48 @@ export default function KanbanBoard() {
     dispatch(updateTask({ token, id: taskId, task: { status: newStatus } }));
   };
 
-  const handleSubmit = () => {
-    const task = { ...formData, projectId };
-    dispatch(createTask({ token, task }));
+  const handleSubmit = async () => {
+  const task = { ...formData, projectId };
+  try {
+    const res = await fetch(`${api_url}/api/v1/task`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(task),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to create task');
+    }
+
+    const data = await res.json();
+    setTasks((prev) => [...prev, data?.data]);
     setShowModal(false);
     setFormData({ title: '', description: '', status: 'todo', assignedTo: '' });
-  };
+  } catch (err) {
+    setError(err.message);
+  }
+};
+
 
   if (loading) return <Loading size="md" color="blue" />;
 
-  const safeTasks = Array.isArray(tasks) ? tasks : [];
-
+  const safeTasks = Array.isArray(tasks?.data) ? tasks?.data : [];
 const columns = {
   todo: safeTasks.filter((task) => task.status === 'todo'),
   'in-progress': safeTasks.filter((task) => task.status === 'in-progress'),
   done: safeTasks.filter((task) => task.status === 'done'),
 };
 
-
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Kanban Board</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {user?.role === 'ADMIN' && (
+      {user?.role === 'ADMIN' || user.role === 'MANAGER' && (
         <>
           <button
             onClick={() => setShowModal(true)}
@@ -114,7 +195,7 @@ const columns = {
                 >
                   <option value="">Assign To</option>
                   {users?.map((u) => (
-                    <option key={u.id} value={u.id}>
+                    <option key={u._id} value={u._id}>
                       {u.name}
                     </option>
                   ))}
@@ -152,7 +233,7 @@ const columns = {
                 >
                   <h2 className="text-xl font-semibold mb-4 capitalize">{status}</h2>
                   {columns[status].map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id} index={index}>
+                    <Draggable key={task._id} draggableId={String(task._id)} index={index}>
                       {(provided) => (
                         <div
                           className="p-4 mb-2 bg-white rounded shadow"

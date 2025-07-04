@@ -14,7 +14,9 @@ import Loading from '../components/Loading';
 export default function Projects() {
   const dispatch = useDispatch();
   const { user, token } = useSelector((state) => state.auth);
+  console.log("user",token)
   const { projects, loading, error } = useSelector((state) => state.projects);
+  console.log("projects",projects)
   const [teams, setTeams] = useState([]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -168,13 +170,13 @@ export default function Projects() {
           </thead>
           <tbody>
             {projects?.map((project) => (
-              <tr key={project.id} className="hover:bg-gray-50">
+              <tr key={project?._id} className="hover:bg-gray-50">
                 <td className="px-4 py-2 border-b">{project.name}</td>
                 <td className="px-4 py-2 border-b">{project.description || '-'}</td>
                 <td className="px-4 py-2 border-b">
                   {/* View Button for all users */}
                   <Link
-                    to={`/kanban/${project.id}`}
+                    to={`/kanban/${project?._id}`}
                     className="mr-2 px-3 py-1 border text-sm rounded bg-green-500 text-white hover:bg-green-600"
                   >
                     View

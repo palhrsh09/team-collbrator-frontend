@@ -32,7 +32,7 @@ export default function Login() {
       });
 
       const data = await res.json();
-
+    console.log("data",data)
       if (res.ok) {
         const role = data.user.role;
         dispatch(loginSuccess({ user: { ...data.user, role }, token: data.token }));

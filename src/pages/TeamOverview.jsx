@@ -12,7 +12,7 @@ import Loading from '../components/Loading';
 export default function TeamOverview() {
   const dispatch = useDispatch();
   const { user, token } = useSelector((state) => state.auth);
-  const { team, activityLogs, loading, error } = useSelector((state) => state.team);
+  const { teams:team, activityLogs, loading, error } = useSelector((state) => state.team);
   console.log("team",team)
 
   const [openTeamForm, setOpenTeamForm] = useState(false);

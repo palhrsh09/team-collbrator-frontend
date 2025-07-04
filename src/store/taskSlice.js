@@ -25,6 +25,7 @@ export const fetchUsers = createAsyncThunk(
       const res = await axios.get(`${api_url}/api/v1/users`, {
         withCredentials: true,
       });
+      console.log(res.data)
       return res.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch users');
@@ -36,6 +37,7 @@ export const createTask = createAsyncThunk(
   'tasks/createTask',
   async ({ task }, { rejectWithValue }) => {
     try {
+        console.log("Creating Task:", task);
       const res = await axios.post(`${api_url}/api/v1/task`, task, {
         withCredentials: true,
       });

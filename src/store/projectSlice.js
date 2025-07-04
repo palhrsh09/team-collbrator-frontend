@@ -21,7 +21,7 @@ export const fetchProjects = createAsyncThunk(
   'projects/fetchProjects',
   async ({ teamId }, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${api_url}/api/v1/project`, {
+      const res = await axios.get(`${api_url}/api/v1/project/${teamId}`, {
         withCredentials: true,
         params: { teamId },
       });
@@ -96,7 +96,7 @@ const projectSlice = createSlice({
       })
       .addCase(fetchProjects.fulfilled, (state, action) => {
         state.loading = false;
-        state.projects = action.payload;
+        state.projects = action.payload.data;
       })
       .addCase(fetchProjects.rejected, (state, action) => {
         state.loading = false;

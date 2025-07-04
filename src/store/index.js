@@ -9,6 +9,6 @@ export const store = configureStore({
     auth: authReducer,
     projects: projectReducer,
      team: teamReducer,
-      tasks: taskReducer,
+    tasks: taskReducer,
   },
 });

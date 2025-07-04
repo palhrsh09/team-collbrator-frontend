@@ -10,6 +10,7 @@ export const fetchAllTeam   = createAsyncThunk(
       const res = await axios.get(`${api_url}/api/v1/team`, {
         withCredentials: true,
       });
+      console.log(res.data)
       return res.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch team');
@@ -63,6 +64,7 @@ export const createTeam = createAsyncThunk(
 const teamSlice = createSlice({
   name: 'team',
   initialState: {
+    teams: [],
     team: null,
     activityLogs: [],
     loading: false,
@@ -81,7 +83,7 @@ const teamSlice = createSlice({
       })
       .addCase(fetchTeam.fulfilled, (state, action) => {
         state.loading = false;
-        state.team = action.payload;
+        state.teams = action.payload.data;
       })
       .addCase(fetchTeam.rejected, (state, action) => {
         state.loading = false;
@@ -92,8 +94,9 @@ const teamSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchAllTeam.fulfilled, (state, action) => {
+        console.log(action.payload)
         state.loading = false;
-        state.team = action.payload.data;
+         state.teams = action.payload.data
       })
       .addCase(fetchAllTeam.rejected, (state, action) => {
         state.loading = false;
