@@ -103,12 +103,43 @@ export default function KanbanBoard() {
     }
   }, [error, dispatch]);
 
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-    const taskId = result.draggableId;
-    const newStatus = result.destination.droppableId;
-    dispatch(updateTask({ token, id: taskId, task: { status: newStatus } }));
-  };
+const handleDragEnd = async (result) => {
+  const { source, destination, draggableId } = result;
+
+  if (!destination || source.droppableId === destination.droppableId) return;
+
+  const taskId = draggableId;
+  const newStatus = destination.droppableId;
+
+  try {
+    const response = await fetch(`${api_url}/api/v1/task/${taskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update task status');
+    }
+
+    // Update tasks in UI after successful API call
+    const updatedTask = await response.json();
+    setTasks((prev) => {
+      const updated = prev.data.map((task) =>
+        task._id === updatedTask.data._id ? updatedTask.data : task
+      );
+      return { ...prev, data: updated };
+    });
+  } catch (err) {
+    console.error('Error updating task status:', err.message);
+    setError(err.message);
+  }
+};
+
 
   const handleSubmit = async () => {
   const task = { ...formData, projectId };

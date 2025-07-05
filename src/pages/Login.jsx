@@ -4,6 +4,8 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase.config';
 import { loginSuccess } from '../store/authSlice';
 import { Link, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client'; // 👈 Add this line
+import { setSocket } from '@/store/socketSlice';
 
 export default function Login() {
   const dispatch = useDispatch();
@@ -32,12 +34,27 @@ export default function Login() {
       });
 
       const data = await res.json();
-    console.log("data",data)
       if (res.ok) {
         const role = data.user.role;
-        dispatch(loginSuccess({ user: { ...data.user, role }, token: data.token }));
+        const loggedInUser = { ...data.user, role };
+        dispatch(loginSuccess({ user: loggedInUser, token: data.token }));
 
-        navigate('/dashboard'); 
+        // 🔥 Connect to WebSocket
+        const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000', {
+          withCredentials: true,
+        });
+
+        socket.on('connect', () => {
+
+  socket.emit('connect_message', {
+    userId: loggedInUser._id,
+    teamId: loggedInUser.teamId,
+    name: loggedInUser.name,
+  });
+  dispatch(setSocket(socket));
+});
+
+        navigate('/dashboard');
       } else {
         setError(data.message || 'Login failed');
       }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   fetchTeam,
@@ -17,6 +17,12 @@ export default function TeamOverview() {
 
   const [openTeamForm, setOpenTeamForm] = useState(false);
   const [teamForm, setTeamForm] = useState({ name: '', description: '' });
+
+ const [showChatBox, setShowChatBox] = useState(false);
+const [messages, setMessages] = useState([]);
+const [newMessage, setNewMessage] = useState(null);
+const socketRef = useRef(null);
+
 
   useEffect(() => {
   if (!token || !user) return;
